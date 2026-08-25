@@ -67,6 +67,8 @@ func Run[T any](ctx context.Context, workers int, tasks []Task[T]) ([]Result[T],
 	}
 
 	next := 0
+
+producer:
 	for ; next < len(tasks); next++ {
 		if err := ctx.Err(); err != nil {
 			break
@@ -74,11 +76,10 @@ func Run[T any](ctx context.Context, workers int, tasks []Task[T]) ([]Result[T],
 
 		select {
 		case <-ctx.Done():
-			break
+			break producer
 		case jobs <- job{index: next, task: tasks[next]}:
 			continue
 		}
-		break
 	}
 
 	// Tasks never submitted are marked cancelled.

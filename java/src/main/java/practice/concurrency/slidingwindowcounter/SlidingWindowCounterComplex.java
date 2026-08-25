@@ -35,7 +35,6 @@ public final class SlidingWindowCounterComplex {
         while (!buckets.isEmpty() && buckets.peekFirst().timestamp <= cutoff) {
             totalCalls -= buckets.removeFirst().count;
         }
-        System.arraycopy(buckets, totalCalls, buckets, totalCalls, totalCalls);
     }
 
     private static final class Bucket {

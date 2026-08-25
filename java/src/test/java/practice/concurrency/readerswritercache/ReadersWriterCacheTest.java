@@ -1,0 +1,3 @@
+package practice.concurrency.readerswritercache;
+import static org.junit.jupiter.api.Assertions.*; import java.util.concurrent.*; import java.util.concurrent.atomic.*; import org.junit.jupiter.api.*;
+class ReadersWriterCacheTest { @Test @Timeout(3) void loadsAMissingValueOnlyOnce() throws Exception { var cache=new ReadersWriterCache<String,Integer>(); var loads=new AtomicInteger(); try(var e=Executors.newFixedThreadPool(8)){ var futures=new java.util.ArrayList<Future<Integer>>(); for(int i=0;i<8;i++)futures.add(e.submit(()->cache.getOrLoad("x",k->loads.incrementAndGet()))); for(var f:futures)assertEquals(1,f.get()); } assertEquals(1,loads.get()); } }

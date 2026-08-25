@@ -1,0 +1,81 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+base_dir="${0:A:h}"
+
+java_home=""
+if [[ -x /usr/libexec/java_home ]]; then
+  java_home="$(/usr/libexec/java_home -v 25 2>/dev/null || true)"
+fi
+if [[ -z "$java_home" && -n "${JAVA_HOME:-}" && -x "$JAVA_HOME/bin/java" ]]; then
+  if "$JAVA_HOME/bin/java" -version 2>&1 | grep -q 'version "25'; then
+    java_home="$JAVA_HOME"
+  fi
+fi
+if [[ -z "$java_home" ]]; then
+  print -u2 'Java 25 was not found. Install a JDK 25 or set JAVA_HOME to it.'
+  exit 1
+fi
+
+export JAVA_HOME="$java_home"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+valid_id() {
+  [[ "$1" =~ '^[a-z0-9]+(-[a-z0-9]+)*$' ]]
+}
+
+package_for() {
+  print -- "${1//-/}"
+}
+
+list_exercises() {
+  sort "$base_dir/.exercise-ids"
+}
+
+new_exercise() {
+  local id="$1"
+  local package_name="$(package_for "$id")"
+  local source_dir="$base_dir/src/main/java/practice/concurrency/$package_name"
+  local test_dir="$base_dir/src/test/java/practice/concurrency/$package_name"
+
+  if [[ -e "$source_dir" || -e "$test_dir" ]]; then
+    print -u2 "Exercise already exists: $id"
+    exit 1
+  fi
+
+  mkdir -p "$source_dir" "$test_dir"
+  sed "s/__PACKAGE__/$package_name/g" "$base_dir/templates/Solution.java" > "$source_dir/Solution.java"
+  sed "s/__PACKAGE__/$package_name/g" "$base_dir/templates/SolutionTest.java" > "$test_dir/SolutionTest.java"
+  print -- "$id" >> "$base_dir/.exercise-ids"
+  print "Created $id. Run: ./practice test $id"
+}
+
+usage() {
+  print -u2 'Usage: ./practice {list|all|test <exercise-id>|new <exercise-id>}' 
+  exit 2
+}
+
+command="${1:-}"
+case "$command" in
+  list)
+    [[ $# -eq 1 ]] || usage
+    list_exercises
+    ;;
+  all)
+    [[ $# -eq 1 ]] || usage
+    cd "$base_dir"
+    ./mvnw -q test
+    ;;
+  test)
+    [[ $# -eq 2 ]] && valid_id "$2" || usage
+    package_name="$(package_for "$2")"
+    [[ -d "$base_dir/src/test/java/practice/concurrency/$package_name" ]] || { print -u2 "Unknown exercise: $2"; exit 1; }
+    cd "$base_dir"
+    ./mvnw -q -Dtest="practice.concurrency.$package_name.*Test" test
+    ;;
+  new)
+    [[ $# -eq 2 ]] && valid_id "$2" || usage
+    new_exercise "$2"
+    ;;
+  *) usage ;;
+esac

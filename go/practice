@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+base_dir="$(cd "$(dirname "$0")" && pwd)"
+
+if ! go version | grep -q 'go1\.24\.'; then
+  echo 'Go 1.24.x is required. Install it or update this workspace deliberately.' >&2
+  exit 1
+fi
+
+valid_id() {
+  [[ "$1" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]
+}
+
+package_for() {
+  echo "${1//-/}"
+}
+
+list_exercises() {
+  find "$base_dir/exercises" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+}
+
+new_exercise() {
+  local id="$1"
+  local package_name
+  package_name="$(package_for "$id")"
+  local exercise_dir="$base_dir/exercises/$id"
+
+  if [[ -e "$exercise_dir" ]]; then
+    echo "Exercise already exists: $id" >&2
+    exit 1
+  fi
+
+  mkdir -p "$exercise_dir"
+  sed "s/__PACKAGE__/$package_name/g" "$base_dir/templates/solution.go.tmpl" > "$exercise_dir/solution.go"
+  sed "s/__PACKAGE__/$package_name/g" "$base_dir/templates/solution_test.go.tmpl" > "$exercise_dir/solution_test.go"
+  echo "Created $id. Run: ./practice test $id"
+}
+
+usage() {
+  echo 'Usage: ./practice {list|all|test <exercise-id>|new <exercise-id>}' >&2
+  exit 2
+}
+
+command="${1:-}"
+case "$command" in
+  list)
+    [[ $# -eq 1 ]] || usage
+    list_exercises
+    ;;
+  all)
+    [[ $# -eq 1 ]] || usage
+    cd "$base_dir"
+    go test -race -timeout 5s ./...
+    ;;
+  test)
+    [[ $# -eq 2 ]] && valid_id "$2" || usage
+    [[ -d "$base_dir/exercises/$2" ]] || { echo "Unknown exercise: $2" >&2; exit 1; }
+    cd "$base_dir"
+    go test -race -timeout 5s "./exercises/$2"
+    ;;
+  new)
+    [[ $# -eq 2 ]] && valid_id "$2" || usage
+    new_exercise "$2"
+    ;;
+  *) usage ;;
+esac

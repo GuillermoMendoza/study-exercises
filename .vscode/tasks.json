@@ -1,0 +1,49 @@
+{
+  "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "javaExercise",
+      "type": "promptString",
+      "description": "Exercise ID (for example: safe-counter)"
+    },
+    {
+      "id": "goExercise",
+      "type": "promptString",
+      "description": "Exercise ID (for example: safe-counter)"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "Java: test all exercises",
+      "type": "shell",
+      "command": "${workspaceFolder}/java/practice",
+      "args": ["all"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Java: test an exercise",
+      "type": "shell",
+      "command": "${workspaceFolder}/java/practice",
+      "args": ["test", "${input:javaExercise}"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Go: test all exercises (race detector)",
+      "type": "shell",
+      "command": "${workspaceFolder}/go/practice",
+      "args": ["all"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Go: test an exercise (race detector)",
+      "type": "shell",
+      "command": "${workspaceFolder}/go/practice",
+      "args": ["test", "${input:goExercise}"],
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

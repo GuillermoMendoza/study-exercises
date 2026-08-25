@@ -1,0 +1,3 @@
+package practice.concurrency.mergeresultstreams;
+import static org.junit.jupiter.api.Assertions.*; import java.util.*; import java.util.concurrent.*; import org.junit.jupiter.api.*;
+class ResultStreamMergerTest { @Test void retainsEveryValue() throws InterruptedException { var a=new LinkedBlockingQueue<ResultStreamMerger.StreamEvent<Integer>>(); var b=new LinkedBlockingQueue<ResultStreamMerger.StreamEvent<Integer>>(); a.add(ResultStreamMerger.StreamEvent.value(1));a.add(ResultStreamMerger.StreamEvent.value(3));a.add(ResultStreamMerger.StreamEvent.end());b.add(ResultStreamMerger.StreamEvent.value(2));b.add(ResultStreamMerger.StreamEvent.end()); assertEquals(Set.of(1,2,3),new HashSet<>(ResultStreamMerger.merge(List.of(a,b)))); } }

@@ -1,0 +1,4 @@
+#!/usr/bin/env zsh
+# Project-local Maven launcher. The Java 25 selection is handled by practice.
+set -euo pipefail
+exec mvn "$@"
